@@ -2,19 +2,21 @@
   "id": "deine-sterne-karin",
   "name": "Deine Sterne, Karin",
   "short_name": "Deine Sterne",
-  "description": "Ein persönliches astrologisches Porträt — hilft dir, dich selbst besser kennenzulernen.",
+  "description": "Ein persönliches astrologisches Porträt, das Karin hilft, ihr Geburtshoroskop spielerisch zu entdecken.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F5EFE6",
-  "theme_color": "#F5EFE6",
+  "background_color": "#0f0a1a",
+  "theme_color": "#0f0a1a",
   "orientation": "portrait-primary",
   "lang": "de",
   "categories": ["lifestyle", "education"],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

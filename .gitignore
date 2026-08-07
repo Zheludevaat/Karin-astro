@@ -1,0 +1,24 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+.npm/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated local analysis output
+analyses/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

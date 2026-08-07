@@ -1,0 +1,3 @@
+# Stable 5.x release used for this migration baseline.
+# Re-run verify_chart.py before changing this pin.
+kerykeion==5.12.9

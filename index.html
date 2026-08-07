@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
+<title>Das bist du, Karin</title>
+<meta name="theme-color" content="#0f0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Das bist du">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/playfair-display-latin-700.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500.woff2') format('woff2')}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;overflow:hidden}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100%;background:#0f0a1a;color:#e8ddd0;-webkit-font-smoothing:antialiased;overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+canvas#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+:focus-visible{outline:2px solid #D4A853;outline-offset:2px}
+
+/* ── Main layout ── */
+.app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+
+/* ── Header ── */
+.title-bar{position:absolute;top:0;left:0;right:0;padding:20px 24px 12px;text-align:center;z-index:2;background:linear-gradient(180deg,rgba(15,10,26,.95) 0%,rgba(15,10,26,.7) 80%,transparent 100%)}
+.title-bar h1{font-family:'Playfair Display',Georgia,serif;font-size:1.125rem;font-weight:700;color:#e8ddd0;letter-spacing:.02em;margin-bottom:2px}
+.title-bar .hint{font-size:.75rem;color:#8a7ab0;transition:opacity .3s}
+.title-bar .hint.fading{opacity:.3}
+
+/* ── Chart area ── */
+.chart-area{flex:1;width:100%;max-width:440px;display:flex;align-items:center;justify-content:center;position:relative}
+.chart-glow{position:absolute;width:90%;height:90%;border-radius:50%;background:radial-gradient(circle,rgba(212,168,83,.06) 0%,transparent 70%);pointer-events:none}
+#chartSvg{width:100%;height:auto;max-height:70vh;position:relative;z-index:1}
+#chartSvg svg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 12px rgba(212,168,83,.15))}
+/* Hotspot styling */
+.hotspot{transition:transform .15s;cursor:pointer}
+.hotspot:active{transform:scale(1.2)}
+
+/* ── Progress ── */
+.progress{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:2}
+.progress-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .4s}
+.progress-dot.found{background:#D4A853;box-shadow:0 0 6px rgba(212,168,853,.4)}
+.progress-label{font-size:.6875rem;color:#8a7ab0;text-align:center;margin-top:6px;transition:opacity .3s}
+
+/* ── Bottom bar ── */
+.bottom-bar{position:absolute;bottom:0;left:0;right:0;padding:20px 24px 24px;text-align:center;z-index:2;background:linear-gradient(0deg,rgba(15,10,26,.95) 0%,rgba(15,10,26,.7) 80%,transparent 100%)}
+.btn{display:inline-block;padding:14px 32px;border-radius:28px;font-family:'Playfair Display',Georgia,serif;font-size:1.0625rem;font-weight:700;color:#0f0a1a;background:linear-gradient(135deg,#D4A853,#C89440);border:none;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 16px rgba(212,168,83,.25)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:default;transform:none}
+
+/* ── Popup ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.overlay.show{display:flex}
+.popup{width:100%;max-width:440px;background:#1a1030;border-radius:24px 24px 0 0;padding:28px 24px 32px;animation:slideUp .35s cubic-bezier(0.16,1,0.3,1);position:relative;max-height:60vh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.popup-close{position:absolute;top:16px;right:20px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#8a7ab0;cursor:pointer;border:none}
+.popup-icon{font-size:2.5rem;display:block;margin-bottom:8px}
+.popup h3{font-family:'Playfair Display',Georgia,serif;font-size:1.375rem;font-weight:700;color:#e8ddd0;margin-bottom:6px;line-height:1.3}
+.popup .type-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.6875rem;font-weight:500;margin-bottom:10px;letter-spacing:.04em}
+.badge-planet{background:rgba(212,168,83,.15);color:#D4A853}
+.badge-house{background:rgba(142,122,176,.15);color:#8e7ab0}
+.badge-aspect{background:rgba(212,120,92,.15);color:#D4785C}
+.badge-harmony{background:rgba(107,155,122,.15);color:#6B9B7A}
+.popup p{font-size:.9375rem;line-height:1.6;color:#c8bdb0;margin-bottom:12px}
+.popup .detail{font-size:.75rem;color:#8a7ab0;margin-bottom:4px}
+.popup .popup-tip{margin-top:4px;padding:10px 14px;background:rgba(212,168,83,.06);border-radius:10px;font-size:.8125rem;color:#D4A853;font-style:italic;line-height:1.5}
+.popup-btn{display:block;width:100%;padding:14px;margin-top:16px;border-radius:14px;background:rgba(212,168,83,.12);color:#D4A853;font-family:'Inter',sans-serif;font-size:.9375rem;font-weight:500;border:none;cursor:pointer;text-align:center;transition:background .15s}
+.popup-btn:active{background:rgba(212,168,53,.2)}
+
+/* ── Summary popup special ── */
+.summary-card{text-align:center;padding:20px 0}
+.summary-card .sum-emoji{font-size:3rem;display:block;margin-bottom:12px}
+.summary-card h2{font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.25rem,3.5vw,1.5rem);line-height:1.4;color:#e8ddd0;margin-bottom:16px}
+.summary-card .sum-lines{text-align:left}
+.summary-card .sum-line{padding:10px 12px;margin-bottom:6px;border-radius:10px;background:rgba(255,255,255,.04);font-size:.875rem;color:#c8bdb0;line-height:1.5}
+.summary-card .sum-line::before{content:'✦ ';color:#D4A853}
+.summary-share{display:block;width:100%;padding:14px;margin-top:16px;border-radius:14px;background:#D4A853;color:#0f0a1a;font-family:'Inter',sans-serif;font-size:.9375rem;font-weight:500;border:none;cursor:pointer;text-align:center}
+
+/* ── Reset button ── */
+.reset-btn{position:absolute;top:20px;right:20px;font-size:.75rem;color:#8a7ab0;background:none;border:none;cursor:pointer;z-index:3;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,.04)}
+.reset-btn:active{background:rgba(255,255,255,.08)}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<div class="app">
+  <div class="title-bar">
+    <h1>Das bist du, Karin</h1>
+    <p class="hint" id="hint">Tippe auf einen Planeten oder eine Linie</p>
+  </div>
+
+  <button class="reset-btn" id="resetBtn" title="Neu starten">↺ neu</button>
+
+  <div class="chart-area">
+    <div class="chart-glow"></div>
+    <div id="chartSvg"></div>
+  </div>
+
+  <div class="progress" id="progressRow"></div>
+
+  <div class="bottom-bar" id="bottomBar">
+    <button class="btn" id="summaryBtn" disabled>Zeig mir, wer ich bin ✨</button>
+  </div>
+</div>
+
+<!-- Overlay for popups -->
+<div class="overlay" id="overlay">
+  <div class="popup" id="popup">
+    <button class="popup-close" id="popupClose">✕</button>
+    <div id="popupContent"></div>
+    <button class="popup-btn" id="popupDismiss">Verstanden ✓</button>
+  </div>
+</div>
+
+<script>
+// ═══════════ DATA ═══════════
+const PLANETS = {
+  Sun:{icon:'☉',sign:'Löwe',deg:'11°28\'',house:2,element:'Feuer',de:'Sonne',
+    title:'Deine Sonne',subtitle:'im Löwen',
+    text:'Du bist warmherzig, stolz und kreativ. Du blühst auf, wenn du etwas Eigenes erschaffst — ein Projekt, ein Zuhause, ein Lebenswerk.',
+    tip:'Anerkennung ist dir wichtig. Das ist nicht oberflächlich — es zeigt dir, dass du auf dem richtigen Weg bist.'},
+  Moon:{icon:'☽',sign:'Steinbock',deg:'12°14\'',house:6,element:'Erde',de:'Mond',
+    title:'Dein Mond',subtitle:'im Steinbock',
+    text:'Du fühlst tief, aber zeigst es selten. Andere sehen Stärke und Disziplin — innen bist du verletzlicher, als du zugibst.',
+    tip:'Deine Gefühle fließen in deine Arbeit. Achtung: du kannst dich darin verlieren.'},
+  Mercury:{icon:'☿',sign:'Jungfrau',deg:'7°38\'',house:3,element:'Erde',de:'Merkur',
+    title:'Dein Merkur',subtitle:'in der Jungfrau',
+    text:'Dein Verstand ist messerscharf. Du denkst präzise und sprichst erst, wenn du etwas dreimal durchdacht hast.',
+    tip:'Menschen kommen zu dir, wenn sie Klarheit brauchen. Deine Worte haben Gewicht.'},
+  Venus:{icon:'♀',sign:'Krebs',deg:'18°02\'',house:12,element:'Wasser',de:'Venus',
+    title:'Deine Venus',subtitle:'im Krebs',
+    text:'Du liebst tief und leise. Deine Zuneigung ist fürsorglich, fast mütterlich — aber nicht jeder sieht sie.',
+    tip:'Du gibst viel in der Liebe. Lerne, auch zu empfangen. Du musst Liebe nicht verdienen.'},
+  Mars:{icon:'♂',sign:'Stier',deg:'14°34\'',house:11,element:'Erde',de:'Mars',
+    title:'Dein Mars',subtitle:'im Stier',
+    text:'Dein Antrieb ist kein Sprint — er ist ein Gletscher. Langsam, aber unaufhaltsam. Du suchst Beständigkeit, nicht Abenteuer.',
+    tip:'Wenn du etwas wirklich willst, hält dich niemand auf. Aber du brauchst Zeit, um in Fahrt zu kommen.'},
+  Jupiter:{icon:'♃',sign:'Krebs',deg:'26°55\'',house:1,element:'Wasser',de:'Jupiter',
+    title:'Dein Jupiter',subtitle:'im Krebs',
+    text:'Du trägst einen stillen Optimismus in dir. Menschen fühlen sich bei dir geborgen — als wäre bei dir immer genug.',
+    tip:'Deine Großzügigkeit ist dein Kapital. Aber sie hat Grenzen — lerne, wo sie enden.'},
+  Saturn:{icon:'♄',sign:'Steinbock',deg:'20°34\'',house:7,element:'Erde',de:'Saturn',
+    title:'Dein Saturn',subtitle:'im Steinbock',
+    text:'In Beziehungen bist du ernsthaft und treu — manchmal zu ernsthaft. Du hast früh gelernt, dass Liebe Verantwortung bedeutet.',
+    tip:'Die richtige Partnerschaft fühlt sich nicht wie eine Prüfung an. Sie fühlt sich an wie ein sicherer Hafen.'},
+  Uranus:{icon:'♅',sign:'Steinbock',deg:'6°17\'',house:6,element:'Erde',de:'Uranus',
+    title:'Dein Uranus',subtitle:'im Steinbock',
+    text:'In dir steckt eine stille Rebellin. Du verbesserst Systeme, statt sie nur zu bedienen. Routine ohne Entwicklung erstickt dich.',
+    tip:'Deine unkonventionelle Seite zeigt sich in deiner Arbeit — du findest Wege, die andere nicht sehen.'},
+  Neptune:{icon:'♆',sign:'Steinbock',deg:'12°26\'',house:6,element:'Erde',de:'Neptun',
+    title:'Dein Neptun',subtitle:'im Steinbock',
+    text:'Deine Arbeit hat für dich eine fast spirituelle Dimension. Ein Job ohne Sinn fühlt sich für dich an wie ein Käfig.',
+    tip:'Du brauchst eine Tätigkeit, die etwas <em>bedeutet</em>. Das ist kein Luxus — das ist deine Natur.'},
+  Pluto:{icon:'♇',sign:'Skorpion',deg:'15°00\'',house:5,element:'Wasser',de:'Pluto',
+    title:'Dein Pluto',subtitle:'im Skorpion',
+    text:'Deine Kreativität kommt aus der Tiefe. Du erschaffst nicht aus Leichtigkeit — sondern aus Intensität und Transformation.',
+    tip:'Deine kreative Kraft ist mächtig. Kanalisiere sie bewusst — sie kann zerstören oder erschaffen.'}
+};
+
+const ASPECTS = [
+  {p1:'Moon',p2:'Neptune',type:'Verbundenheit',icon:'≈',text:'Dein Gefühl und deine Intuition sind fast deckungsgleich. Du spürst, was andere fühlen, bevor sie es sagen. Das ist deine größte Gabe — und manchmal deine größte Last.',tip:'Vertrau deinem Bauchgefühl. Es ist präziser als dein Verstand.'},
+  {p1:'Mars',p2:'Pluto',type:'Intensität',icon:'⚡',text:'Du hast eine innere Kraft, die andere als einschüchternd empfinden können. Du überstehst Krisen, an denen andere zerbrechen.',tip:'Deine Stärke ist real. Dimme dich nicht, um andere nicht zu verunsichern.'},
+  {p1:'Sun',p2:'Mars',type:'Spannung',icon:'⇌',text:'Zwischen deinem Stolz und deinem Antrieb knistert es. Du willst glänzen — aber nicht um jeden Preis. Diese innere Reibung macht dich besser.',tip:'Gesunder Wettbewerb treibt dich an. Unfaire Vergleiche bremsen dich.'},
+  {p1:'Sun',p2:'Pluto',type:'Wandlung',icon:'🔄',text:'Deine Identität durchläuft regelmäßig tiefe Transformationen. Wer du heute bist, ist nicht, wer du vor fünf Jahren warst.',tip:'Du wächst durch Krisen. Das ist kein Fluch — das ist dein Rhythmus.'},
+  {p1:'Venus',p2:'Saturn',type:'Spannung',icon:'⇌',text:'Liebe und Pflicht ringen in dir. Du gibst viel — aber hast vielleicht das Gefühl, Liebe müsse verdient werden. Das muss sie nicht.',tip:'Du bist liebenswert — ohne Leistung, ohne Beweis, ohne Gegenleistung.'}
+];
+
+// ═══════════ CANVAS STARFIELD ═══════════
+const canvas=document.getElementById('stars'),ctx=canvas.getContext('2d');
+let stars=[],w,h;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+for(let i=0;i<90;i++)stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.5+.3,s:Math.random()*.5+.2,o:Math.random()});
+function drawStars(){
+  ctx.clearRect(0,0,w,h);
+  for(const s of stars){
+    s.o+=.005*(s.s);if(s.o>1||s.o<.15)s.s*=-1;
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.o*.6})`;ctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+// ═══════════ LOAD SVG CHART ═══════════
+const chartMount=document.getElementById('chartSvg');
+let discovered=JSON.parse(localStorage.getItem('karin-discovered')||'[]');
+const TOTAL=Object.keys(PLANETS).length+ASPECTS.length;
+
+async function loadChart(){
+  try{const r=await fetch('karin-chart.svg');const t=await r.text();chartMount.innerHTML=t;
+  const svg=chartMount.querySelector('svg');if(!svg)return;
+  svg.removeAttribute('width');svg.removeAttribute('height');svg.style.width='100%';svg.style.height='auto';svg.style.display='block';
+  // Add hotspot circles for planets
+  const cx=330,cy=260,R=230;
+  Object.entries(PLANETS).forEach(([name,p])=>{
+    const si={'Ari':0,Tau:1,Gem:2,Can:3,Leo:4,Vir:5,Lib:6,Sco:7,Sag:8,Cap:9,Aqu:10,Pis:11};
+    const si2={'Widder':0,'Stier':1,'Zwillinge':2,'Krebs':3,'Löwe':4,'Jungfrau':5,'Waage':6,'Skorpion':7,'Schütze':8,'Steinbock':9,'Wassermann':10,'Fische':12};
+    const signIdx=si[p.sign]??si2[p.sign]??4;
+    const deg=parseFloat(p.deg.replace('°','').replace('\'','').replace('"',''))||0;
+    const angle=((deg/30+signIdx)/12)*Math.PI*2-Math.PI/2;
+    const x=cx+Math.cos(angle)*R*.42,y=cy+Math.sin(angle)*R*.42;
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',x);circle.setAttribute('cy',y);circle.setAttribute('r','26');
+    circle.setAttribute('fill','transparent');circle.classList.add('hotspot');
+    circle.style.pointerEvents='all';circle.dataset.planet=name;
+    svg.appendChild(circle);
+  });
+  // Aspect lines (approximate positions)
+  ASPECTS.forEach((a,i)=>{const px=cx+Math.cos(i*1.2)*R*.25,py=cy+Math.sin(i*1.2)*R*.25;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    line.setAttribute('cx',px);line.setAttribute('cy',py);line.setAttribute('r','22');
+    line.setAttribute('fill','rgba(212,168,83,.04)');line.setAttribute('stroke','rgba(212,168,83,.25)');line.setAttribute('stroke-width','1');
+    line.style.pointerEvents='all';line.classList.add('hotspot');line.dataset.aspect=i.toString();
+    svg.appendChild(line);
+  });
+  // Click handlers
+  svg.addEventListener('click',e=>{
+    const circle=e.target.closest('.hotspot');if(!circle)return;
+    if(circle.dataset.planet)showPopup('planet',circle.dataset.planet);
+    else if(circle.dataset.aspect)showPopup('aspect',circle.dataset.aspect);
+  });
+  updateProgress();
+  }catch(e){chartMount.innerHTML='<p style="color:#8a7ab0;text-align:center;padding:60px">Lade dein Horoskop…</p>'}
+}
+loadChart();
+
+// ═══════════ POPUP SYSTEM ═══════════
+const overlay=document.getElementById('overlay'),popupContent=document.getElementById('popupContent'),dismissBtn=document.getElementById('popupDismiss'),closeBtn=document.getElementById('popupClose');
+let currentPopup=null;
+
+function showPopup(type,id){
+  currentPopup={type,id};
+  let html='';
+  if(type==='planet'){
+    const p=PLANETS[id];if(!p)return;
+    html=`<span class="popup-icon">${p.icon}</span>
+    <h3>${p.title}</h3><span class="type-badge badge-planet">Planet · ${p.element}</span>
+    <p class="detail">${p.subtitle} · ${p.deg} · ${p.house}. Haus</p>
+    <p>${p.text}</p><div class="popup-tip">💡 ${p.tip}</div>`;
+  }else if(type==='aspect'){
+    const a=ASPECTS[parseInt(id)];if(!a)return;
+    const p1=PLANETS[a.p1],p2=PLANETS[a.p2];
+    html=`<span class="popup-icon">${a.icon}</span>
+    <h3>${p1?.de||a.p1} & ${p2?.de||a.p2}</h3><span class="type-badge badge-aspect">${a.type}</span>
+    <p>${a.text}</p><div class="popup-tip">💡 ${a.tip}</div>`;
+  }
+  popupContent.innerHTML=html;
+  overlay.classList.add('show');
+  dismissBtn.textContent='Verstanden ✓';
+  dismissBtn.onclick=()=>{markDiscovered(type+':'+id);hidePopup()};
+  closeBtn.onclick=hidePopup;
+}
+
+function hidePopup(){
+  overlay.classList.remove('show');currentPopup=null;
+  updateProgress();
+  if(discovered.length>=5)document.getElementById('hint').classList.add('fading');
+}
+
+function markDiscovered(key){
+  if(!discovered.includes(key)){discovered.push(key);localStorage.setItem('karin-discovered',JSON.stringify(discovered))}
+  updateProgress();
+}
+
+function updateProgress(){
+  const row=document.getElementById('progressRow');
+  const found=discovered.length;
+  let dots='';for(let i=0;i<TOTAL;i++)dots+=`<div class="progress-dot${i<found?' found':''}"></div>`;
+  row.innerHTML=dots+`<div class="progress-label">${found} von ${TOTAL} entdeckt</div>`;
+  const btn=document.getElementById('summaryBtn');
+  btn.disabled=found<3;
+  if(found<3)btn.textContent=`Entdecke noch ${3-found} weitere →`;
+  else btn.textContent='Zeig mir, wer ich bin ✨';
+  document.getElementById('hint').textContent=found===0?'Tippe auf einen Planeten oder eine Linie':found<TOTAL?`${TOTAL-found} Geheimnisse warten noch auf dich`:'Alles entdeckt! Du kennst deine Sterne.';
+}
+
+// ═══════════ SUMMARY ═══════════
+document.getElementById('summaryBtn').addEventListener('click',()=>{
+  const lines=[];
+  for(const key of discovered){
+    const[type,id]=key.split(':');
+    if(type==='planet'){
+      const p=PLANETS[id];if(!p)continue;
+      lines.push(`${p.title} ${p.subtitle}: ${p.text}`);
+    }else if(type==='aspect'){
+      const a=ASPECTS[parseInt(id)];if(!a)continue;
+      lines.push(a.text);
+    }
+  }
+  popupContent.innerHTML=`<div class="summary-card">
+    <span class="sum-emoji">✨</span>
+    <h2>Das bist du, Karin</h2>
+    <div class="sum-lines">${lines.map(l=>`<div class="sum-line">${l}</div>`).join('')}</div>
+    <button class="summary-share" onclick="shareSummary()">Teilen 📤</button>
+  </div>`;
+  overlay.classList.add('show');
+  dismissBtn.textContent='Schließen';
+  dismissBtn.onclick=hidePopup;
+  closeBtn.onclick=hidePopup;
+});
+
+function shareSummary(){
+  const text=document.querySelector('.sum-lines')?.innerText||'';
+  if(navigator.share){navigator.share({title:'Das bist du, Karin',text:text.substring(0,200)+'…'}).catch(()=>{})}
+  else{alert('Teilen wird auf diesem Gerät nicht unterstützt. Mach einen Screenshot!')}
+}
+
+// ═══════════ RESET ═══════════
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('Alle Entdeckungen zurücksetzen?')){discovered=[];localStorage.removeItem('karin-discovered');updateProgress();document.getElementById('hint').classList.remove('fading')}
+});
+
+// ═══════════ PWA ═══════════
+let deferred;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{})});
+
+// Allow re-tapping same element
+overlay.addEventListener('click',function(e){if(e.target===overlay)hidePopup()});
+
+updateProgress();
+</script>
+</body>
+</html>

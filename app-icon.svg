@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Karin Astro</title>
+  <rect width="512" height="512" rx="112" fill="#0f0a1a"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#D4A853" stroke-width="18"/>
+  <g fill="#D4A853" transform="translate(256 256)">
+    <path d="M0-122 25-32 106-61 45 11 122 47 29 50 36 143 0 58-36 143-29 50-122 47-45 11-106-61-25-32Z"/>
+  </g>
+  <circle cx="256" cy="256" r="24" fill="#e8ddd0"/>
+</svg>

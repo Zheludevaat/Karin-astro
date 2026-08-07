@@ -36,6 +36,7 @@ Do not silently recalculate, reinterpret, rewrite, or replace these sources duri
 ├── compute_karin_chart.py        # Natal chart generation
 ├── verify_chart.py               # Independent chart verification
 ├── generate_transit_cache.py     # Transit cache generator
+├── validate_migration.py         # Migration package integrity checks
 ├── requirements.txt              # Reproducible Python dependency pin
 ├── data/
 │   └── karin-profile.json        # Frontend-safe structured content/source snapshot
@@ -61,6 +62,16 @@ python -m http.server 8080
 ```
 
 Then open `http://localhost:8080`.
+
+## Validate the migration package
+
+Run the lightweight structural checks before handing the project to Lovable:
+
+```bash
+python validate_migration.py
+```
+
+This checks required migration files, the structured Karin profile, portability mistakes, and service-worker asset references. It does not recalculate the chart.
 
 ## Reproduce the astrology calculations
 
